@@ -1,66 +1,95 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+# larastan-enum-crash
 
-## About Laravel
+An example project to show an issue in phpstan/larastan around creating a laravel
+macro that uses an enum as a default parameter.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Issue
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Here's the call stack (absolute path removed for brevity):
+```
+Internal error: Internal error: Invalid value in file /app/Providers/AppServiceProvider.php                                                                                                                                    
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+#0 phar:///vendor/phpstan/phpstan/phpstan.phar/vendor/nikic/php-parser/lib/PhpParser/Builder/Param.php(38): PhpParser\BuilderHelpers::normalizeValue(Object(App\Enums\SearchMatchType))                                        
+#1 phar:///vendor/phpstan/phpstan/phpstan.phar/vendor/ondrejmirtes/better-reflection/src/SourceLocator/SourceStubber/ReflectionSourceStubber.php(484): PhpParser\Builder\Param->setDefault(Object(App\Enums\SearchMatchType))  
+#2 phar:///vendor/phpstan/phpstan/phpstan.phar/vendor/ondrejmirtes/better-reflection/src/SourceLocator/SourceStubber/ReflectionSourceStubber.php(449):                                                                         
+PHPStan\BetterReflection\SourceLocator\SourceStubber\ReflectionSourceStubber->setParameterDefaultValue(Object(ReflectionParameter), Object(PhpParser\Builder\Param))                                                                                                     
+#3 phar:///vendor/phpstan/phpstan/phpstan.phar/vendor/ondrejmirtes/better-reflection/src/SourceLocator/SourceStubber/ReflectionSourceStubber.php(128):                                                                         
+PHPStan\BetterReflection\SourceLocator\SourceStubber\ReflectionSourceStubber->addParameters(Object(PhpParser\Builder\Function_), Object(ReflectionFunction))                                                                                                             
+#4 phar:///vendor/phpstan/phpstan/phpstan.phar/src/Type/ClosureTypeFactory.php(57):                                                                                                                                            
+PHPStan\BetterReflection\SourceLocator\SourceStubber\ReflectionSourceStubber->generateFunctionStubFromReflection(Object(ReflectionFunction))                                                                                                                             
+#5 /vendor/nunomaduro/larastan/src/Methods/MacroMethodsClassReflectionExtension.php(136): PHPStan\Type\ClosureTypeFactory->fromClosureObject(Object(Closure))                                                                  
+#6 /vendor/nunomaduro/larastan/src/Methods/BuilderHelper.php(140): NunoMaduro\Larastan\Methods\MacroMethodsClassReflectionExtension->hasMethod(Object(PHPStan\Reflection\ClassReflection), 'whereLike')                        
+#7 /vendor/nunomaduro/larastan/src/Methods/EloquentBuilderForwardsCallsExtension.php(103): NunoMaduro\Larastan\Methods\BuilderHelper->searchOnEloquentBuilder(Object(PHPStan\Reflection\ClassReflection), 'whereLike',         
+Object(PHPStan\Reflection\ClassReflection))                                                                                                                                                                                                                              
+#8 /vendor/nunomaduro/larastan/src/Methods/EloquentBuilderForwardsCallsExtension.php(54): NunoMaduro\Larastan\Methods\EloquentBuilderForwardsCallsExtension->findMethod(Object(PHPStan\Reflection\ClassReflection),            
+'whereLike')                                                                                                                                                                                                                                                             
+#9 /vendor/nunomaduro/larastan/src/Methods/ModelForwardsCallsExtension.php(215): NunoMaduro\Larastan\Methods\EloquentBuilderForwardsCallsExtension->hasMethod(Object(PHPStan\Reflection\ClassReflection), 'whereLike')         
+#10 /vendor/nunomaduro/larastan/src/Methods/ModelForwardsCallsExtension.php(65): NunoMaduro\Larastan\Methods\ModelForwardsCallsExtension->findMethod(Object(PHPStan\Reflection\ClassReflection), 'whereLike')                  
+#11 phar:///vendor/phpstan/phpstan/phpstan.phar/src/Reflection/ClassReflection.php(445): NunoMaduro\Larastan\Methods\ModelForwardsCallsExtension->hasMethod(Object(PHPStan\Reflection\ClassReflection), 'whereLike')           
+#12 phar:///vendor/phpstan/phpstan/phpstan.phar/src/Type/ObjectType.php(551): PHPStan\Reflection\ClassReflection->hasMethod('whereLike')                                                                                       
+#13 phar:///vendor/phpstan/phpstan/phpstan.phar/src/Rules/Methods/CallToStaticMethodStatementWithoutSideEffectsRule.php(69): PHPStan\Type\ObjectType->hasMethod('whereLike')                                                   
+#14 phar:///vendor/phpstan/phpstan/phpstan.phar/src/Analyser/FileAnalyser.php(107): PHPStan\Rules\Methods\CallToStaticMethodStatementWithoutSideEffectsRule->processNode(Object(PhpParser\Node\Stmt\Expression),               
+Object(PHPStan\Analyser\MutatingScope))                                                                                                                                                                                                                                  
+#15 phar:///vendor/phpstan/phpstan/phpstan.phar/src/Node/ClassStatementsGatherer.php(108): PHPStan\Analyser\FileAnalyser->PHPStan\Analyser\{closure}(Object(PhpParser\Node\Stmt\Expression),                                   
+Object(PHPStan\Analyser\MutatingScope))                                                                                                                                                                                                                                  
+#16 phar:///vendor/phpstan/phpstan/phpstan.phar/src/Analyser/NodeScopeResolver.php(542): PHPStan\Node\ClassStatementsGatherer->__invoke(Object(PhpParser\Node\Stmt\Expression), Object(PHPStan\Analyser\MutatingScope))        
+#17 phar:///vendor/phpstan/phpstan/phpstan.phar/src/Analyser/NodeScopeResolver.php(444): PHPStan\Analyser\NodeScopeResolver::PHPStan\Analyser\{closure}(Object(PhpParser\Node\Stmt\Expression),                                
+Object(PHPStan\Analyser\MutatingScope))                                                                                                                                                                                                                                  
+#18 phar:///vendor/phpstan/phpstan/phpstan.phar/src/Analyser/NodeScopeResolver.php(387): PHPStan\Analyser\NodeScopeResolver->processStmtNode(Object(PhpParser\Node\Stmt\Expression), Object(PHPStan\Analyser\MutatingScope),   
+Object(Closure), Object(PHPStan\Analyser\StatementContext))                                                                                                                                                                                                              
+#19 phar:///vendor/phpstan/phpstan/phpstan.phar/src/Analyser/NodeScopeResolver.php(541): PHPStan\Analyser\NodeScopeResolver->processStmtNodes(Object(PhpParser\Node\Stmt\ClassMethod), Array,                                  
+Object(PHPStan\Analyser\MutatingScope), Object(Closure), Object(PHPStan\Analyser\StatementContext))                                                                                                                                                                      
+#20 phar:///vendor/phpstan/phpstan/phpstan.phar/src/Analyser/NodeScopeResolver.php(387): PHPStan\Analyser\NodeScopeResolver->processStmtNode(Object(PhpParser\Node\Stmt\ClassMethod), Object(PHPStan\Analyser\MutatingScope),  
+Object(PHPStan\Node\ClassStatementsGatherer), Object(PHPStan\Analyser\StatementContext))                                                                                                                                                                                 
+#21 phar:///vendor/phpstan/phpstan/phpstan.phar/src/Analyser/NodeScopeResolver.php(643): PHPStan\Analyser\NodeScopeResolver->processStmtNodes(Object(PhpParser\Node\Stmt\Class_), Array,                                       
+Object(PHPStan\Analyser\MutatingScope), Object(PHPStan\Node\ClassStatementsGatherer), Object(PHPStan\Analyser\StatementContext))                                                                                                                                         
+#22 phar:///vendor/phpstan/phpstan/phpstan.phar/src/Analyser/NodeScopeResolver.php(387): PHPStan\Analyser\NodeScopeResolver->processStmtNode(Object(PhpParser\Node\Stmt\Class_), Object(PHPStan\Analyser\MutatingScope),       
+Object(Closure), Object(PHPStan\Analyser\StatementContext))                                                                                                                                                                                                              
+#23 phar:///vendor/phpstan/phpstan/phpstan.phar/src/Analyser/NodeScopeResolver.php(615): PHPStan\Analyser\NodeScopeResolver->processStmtNodes(Object(PhpParser\Node\Stmt\Namespace_), Array,                                   
+Object(PHPStan\Analyser\MutatingScope), Object(Closure), Object(PHPStan\Analyser\StatementContext))                                                                                                                                                                      
+#24 phar:///vendor/phpstan/phpstan/phpstan.phar/src/Analyser/NodeScopeResolver.php(356): PHPStan\Analyser\NodeScopeResolver->processStmtNode(Object(PhpParser\Node\Stmt\Namespace_), Object(PHPStan\Analyser\MutatingScope),   
+Object(Closure), Object(PHPStan\Analyser\StatementContext))                                                                                                                                                                                                              
+#25 phar:///vendor/phpstan/phpstan/phpstan.phar/src/Analyser/FileAnalyser.php(166): PHPStan\Analyser\NodeScopeResolver->processNodes(Array, Object(PHPStan\Analyser\MutatingScope), Object(Closure))                           
+#26 phar:///vendor/phpstan/phpstan/phpstan.phar/src/Command/WorkerCommand.php(132): PHPStan\Analyser\FileAnalyser->analyseFile('/Volumes/code/e...', Array, Object(PHPStan\Rules\LazyRegistry),                                
+Object(PHPStan\Collectors\Registry), NULL)                                                                                                                                                                                                                               
+#27 phar:///vendor/phpstan/phpstan/phpstan.phar/vendor/evenement/evenement/src/Evenement/EventEmitterTrait.php(97): PHPStan\Command\WorkerCommand->PHPStan\Command\{closure}(Array)                                            
+#28 phar:///vendor/phpstan/phpstan/phpstan.phar/vendor/clue/ndjson-react/src/Decoder.php(117): _PHPStan_5b84f9f0d\Evenement\EventEmitter->emit('data', Array)                                                                  
+#29 phar:///vendor/phpstan/phpstan/phpstan.phar/vendor/evenement/evenement/src/Evenement/EventEmitterTrait.php(97): _PHPStan_5b84f9f0d\Clue\React\NDJson\Decoder->handleData(Array)                                            
+#30 phar:///vendor/phpstan/phpstan/phpstan.phar/vendor/react/stream/src/Util.php(62): _PHPStan_5b84f9f0d\Evenement\EventEmitter->emit('data', Array)                                                                           
+#31 phar:///vendor/phpstan/phpstan/phpstan.phar/vendor/evenement/evenement/src/Evenement/EventEmitterTrait.php(97): _PHPStan_5b84f9f0d\React\Stream\Util::_PHPStan_5b84f9f0d\React\Stream\{closure}('{"action":"anal...')      
+#32 phar:///vendor/phpstan/phpstan/phpstan.phar/vendor/react/stream/src/DuplexResourceStream.php(154): _PHPStan_5b84f9f0d\Evenement\EventEmitter->emit('data', Array)                                                          
+#33 phar:///vendor/phpstan/phpstan/phpstan.phar/vendor/react/event-loop/src/StreamSelectLoop.php(201): _PHPStan_5b84f9f0d\React\Stream\DuplexResourceStream->handleData(Resource id #5694)                                     
+#34 phar:///vendor/phpstan/phpstan/phpstan.phar/vendor/react/event-loop/src/StreamSelectLoop.php(173): _PHPStan_5b84f9f0d\React\EventLoop\StreamSelectLoop->waitForStreamActivity(NULL)                                        
+#35 phar:///vendor/phpstan/phpstan/phpstan.phar/src/Command/WorkerCommand.php(98): _PHPStan_5b84f9f0d\React\EventLoop\StreamSelectLoop->run()                                                                                  
+#36 phar:///vendor/phpstan/phpstan/phpstan.phar/vendor/symfony/console/Command/Command.php(259): PHPStan\Command\WorkerCommand->execute(Object(_PHPStan_5b84f9f0d\Symfony\Component\Console\Input\ArgvInput),                  
+Object(_PHPStan_5b84f9f0d\Symfony\Component\Console\Output\ConsoleOutput))                                                                                                                                                                                               
+#37 phar:///vendor/phpstan/phpstan/phpstan.phar/vendor/symfony/console/Application.php(870):                                                                                                                                   
+_PHPStan_5b84f9f0d\Symfony\Component\Console\Command\Command->run(Object(_PHPStan_5b84f9f0d\Symfony\Component\Console\Input\ArgvInput), Object(_PHPStan_5b84f9f0d\Symfony\Component\Console\Output\ConsoleOutput))                                                       
+#38 phar:///vendor/phpstan/phpstan/phpstan.phar/vendor/symfony/console/Application.php(261): _PHPStan_5b84f9f0d\Symfony\Component\Console\Application->doRunCommand(Object(PHPStan\Command\WorkerCommand),                     
+Object(_PHPStan_5b84f9f0d\Symfony\Component\Console\Input\ArgvInput), Object(_PHPStan_5b84f9f0d\Symfony\Component\Console\Output\ConsoleOutput))                                                                                                                         
+#39 phar:///vendor/phpstan/phpstan/phpstan.phar/vendor/symfony/console/Application.php(157):                                                                                                                                   
+_PHPStan_5b84f9f0d\Symfony\Component\Console\Application->doRun(Object(_PHPStan_5b84f9f0d\Symfony\Component\Console\Input\ArgvInput), Object(_PHPStan_5b84f9f0d\Symfony\Component\Console\Output\ConsoleOutput))                                                         
+#40 phar:///vendor/phpstan/phpstan/phpstan.phar/bin/phpstan(124): _PHPStan_5b84f9f0d\Symfony\Component\Console\Application->run()                                                                                              
+#41 phar:///vendor/phpstan/phpstan/phpstan.phar/bin/phpstan(125): _PHPStan_5b84f9f0d\{closure}()                                                                                                                               
+#42 /vendor/phpstan/phpstan/phpstan(8): require('phar:///Volumes...')                                                                                                                                                          
+#43 /vendor/bin/phpstan(119): include('/Volumes/code/e...')                                                                                                                                                                    
+#44 {main}                                                                                                                                                                                                                                                               
+Child process error (exit code 1):
+```
 
-## Learning Laravel
+To see the issue yourself, run:
+```bash
+./vendor/bin/phpstan -v
+```
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Setup
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+This project was created using the following commands:
+```bash
+curl -s "https://laravel.build/larastan-enum-crash?with=none" | bash
+cd larastan-enum-crash
+composer require --dev phpstan/phpstan nunomaduro/larastan
+# Add phpstan.neon, app/Enums/SearchMatchType.php, and add macro to app/Providers/AppServiceProvider.php
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 2000 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-## Laravel Sponsors
-
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
-
-### Premium Partners
-
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[OP.GG](https://op.gg)**
-- **[WebReinvent](https://webreinvent.com/?utm_source=laravel&utm_medium=github&utm_campaign=patreon-sponsors)**
-- **[Lendio](https://lendio.com)**
-
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
